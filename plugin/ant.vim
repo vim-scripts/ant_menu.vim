@@ -2,8 +2,8 @@
 "Another Neat Tool (http://jakarta.apache.org/ant/index.html)
 "Author : Shad Gregory <shadg@mailcity.com>
 "http://home.austin.rr.com/shadgregory
-"$Date: 8/8/2002 $
-"$Revision: 0.4.2 $
+"$Date: 11/9/2002 $
+"$Revision: 0.4.3 $
 "
 "Configuration comments:
 "	You can set ant.vim options.  Let's say that you always use the
@@ -36,24 +36,58 @@
 "	,t -> Prompts you for the name of the build target and executes
 "		the specified target after enter is pressed.  (Thanks to
 "		Anton Straka for this bit of code.)
+"
+"	Thanks:
+"		Anton Straka, Ronny Wilms, Nathan Smith, Keith Corwin, Mark
+"		Healy
 
 function! GetProbFile()
-	if getline(".") =~ 'Found \d.* error'
-		let l:badFile = getline(".")
-		let l:badFile = substitute(l:badFile,'.*\("[^"]*"\)','\1','')
-		let l:badFile = substitute(l:badFile,'"','','')
+	let l:badFile = getline(".")
+  	"Is this jikes 1.17?
+	if getline(".") =~ 'Found \d.*syntax'
+	  	echo "jikes117!"
+		let l:badFile = substitute(l:badFile,'\[javac\]\(.*\)','\1','')
+		let l:badFile = substitute(l:badFile,'Found.*"\(.*\.java\)":','\1','')
+		let l:badFile = substitute(l:badFile,'^\s*\(.*\)','\1','')
 		let l:current = line('.') + 2
 		let l:lineNumber = getline(l:current)
-		let l:lineNumber = substitute(l:lineNumber,'.*\(\s.*\)\..*','\1','')
-		silent! exec '!gvim +' . l:lineNumber . ' ' .l:badFile
+		let l:lineNumber = substitute(l:lineNumber,'^.*\s\(\d*\)\..*','\1','')
+		echo l:badFile
+		if (bufexists(l:badFile))
+		  	silent! exec 'split +' . l:lineNumber . ' ' .l:badFile
+		else
+			silent! exec '!gvim +' . l:lineNumber . ' ' .l:badFile
+		endif
 		return
+	"is this jikes 1.15?
+	elseif getline(".") =~ '\.java:\d*:\d'
+	  	echo "jikes115!"
+	        let l:badFile = substitute(l:badFile,'\(^.*\):\d*:.*','\1','')
+        	let l:badFile = substitute(l:badFile,'\(^.*.java\):\d*:.*','\1','')
+        	let l:badFile = substitute(l:badFile,'\[javac\]\(.*\)','\1','')
+		let l:badFile = substitute(l:badFile,'^\s*\(.*\)','\1','')
+        	let l:current = getline(".")
+        	let l:lineNumber = substitute(l:current,'.*:\(\d*\):.*','\1','')
+        	let l:lineNumber = substitute(l:current,'.*.java:\(\d*\):.*','\1','')
+		if (bufexists(l:badFile))
+		  	silent! exec 'split +' . l:lineNumber . ' ' .l:badFile
+		else
+			silent! exec '!gvim +' . l:lineNumber . ' ' .l:badFile
+		endif
+		return
+	"Is this sun's jdk?
 	elseif getline(".") =~ '\.java:\d.*:'
-		let l:badFile = getline(".")
+	  	echo "javac!"
 		let l:badFile = substitute(l:badFile,'\(^.*\):\d*:.*','\1','')
 		let l:badFile = substitute(l:badFile,'\[javac\]\(.*\)','\1','')
+		let l:badFile = substitute(l:badFile,'^\s*\(.*\)','\1','')
 		let l:current = getline(".")
 		let l:lineNumber = substitute(l:current,'.*:\(\d*\):.*','\1','')
-		silent! exec '!gvim +' . l:lineNumber . ' ' .l:badFile
+		if (bufexists(l:badFile))
+			silent! exec 'split +' . l:lineNumber . ' ' .l:badFile
+		else
+			silent! exec '!gvim +' . l:lineNumber . ' ' .l:badFile
+	        endif
 		return
 	else
 		redraw
@@ -67,11 +101,10 @@ function! BuildTargetMenu()
 	silent! exec 'read '.g:buildFile
   	silent! exec 'g/^$/d'
 	"leave only target tags
+	silent! exec 'g/<target.*[^>]$/exe "norm! v/>\<CR>J"'
+        silent! exec 'g/<!--.*\_.*.*-->/exe "norm! v/-->\<CR>J"'
 	silent! exec 'g!/<target/d'
-	silent! exec '%s/\s*<target\s\(name="[^"]*"\).\+/\1/eg'
-	silent! exec '%s/name//g'
-	silent! exec '%s/"//g'
-	silent! exec '%s/=//g'
+        silent! exec '%s/^\s*<target.*name="\([^"]*\)".\+/\1/eg'
 	"escape any periods
 	silent! exec '%s/\./\\./g'
   	let entries=line("$")
@@ -116,7 +149,6 @@ map	,t	:call SetBuildTarget()<cr>
 "build ant menu
 amenu &ANT.\ &Build	:call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
 amenu &ANT.\ &Find	:call DoAntFind()<cr>
-amenu &ANT.\ &Make	:call CallMake()<cr>
 
 "parse build file if one exists in current directory
 if filereadable(g:buildFile)
