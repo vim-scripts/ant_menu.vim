@@ -1,16 +1,24 @@
-"ant.vim : VIM menu for using ant (http://jakarta.apache.org/ant/index.html)
+"ant.vim : VIM menu for using ant 
+"Another Neat Tool (http://jakarta.apache.org/ant/index.html)
 "Author : Shad Gregory <shadg@mailcity.com>
 "
 "globals
-let g:buildFile = './build.xml'
+let g:buildFile = 'build.xml'
 
 if exists("loaded_antmenu")
 	aunmenu ANT
 endif
 
-amenu &ANT.\ &Default\ Build	:call DoAntCmd('-buildfile',g:buildFile)<cr>
-amenu &ANT.\ &Debug\ Build	:call DoAntCmd('-debug -buildfile',g:buildFile)<cr>
-amenu &ANT.\ &Verbose\ Build	:call DoAntCmd('-verbose -buildfile',g:buildFile)<cr>
+"keyboard shortcuts
+map	,b	:call DoAntCmd('-buildfile',g:buildFile)<cr>
+map	,s	:call SetBuildFile()<cr>
+
+"build ant menu
+amenu &ANT.\ &Build.\ &Default	:call DoAntCmd('-buildfile',g:buildFile)<cr>
+amenu &ANT.\ &Build.\ &Find	:call DoAntCmd('-find',g:buildFile)<cr>
+amenu &ANT.\ &Build.\ &Debug 	:call DoAntCmd('-debug -buildfile',g:buildFile)<cr>
+amenu &ANT.\ &Build.\ &Verbose	:call DoAntCmd('-verbose -buildfile',g:buildFile)<cr>
+amenu &ANT.\ &Build.\ &Quiet 	:call DoAntCmd('-quiet -buildfile',g:buildFile)<cr>
 amenu &ANT.\ &Set\ build\ file	:call SetBuildFile()<cr>
 amenu &ANT.\ &ANT\ Help	 	:call DoAntCmd('--help')<cr>
 amenu &ANT.\ &ANT\ Version 	:call DoAntCmd('-version')<cr>
