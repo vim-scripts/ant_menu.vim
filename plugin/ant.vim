@@ -1,32 +1,65 @@
-"ant.vim : VIM menu for using ant 
+"ant.vim : VIM menu for using ant
 "Another Neat Tool (http://jakarta.apache.org/ant/index.html)
 "Author : Shad Gregory <shadg@mailcity.com>
+"$Revision: 0.2.1
 "
-"globals
-let g:buildFile = './build.xml'
+function! BuildTargetMenu()
+	new
+	silent! exec 'read '.g:buildFile
+  	silent! exec 'g/^$/d'
+	"leave only target tags
+	silent! exec 'g!/^\s<target/d'
+	silent! exec '%s/\s*<target\s\(name="[^"]*"\).\+/\1/eg'
+	silent! exec '%s/name//g'
+	silent! exec '%s/"//g'
+	silent! exec '%s/=//g'
+  	let entries=line("$")
+	let target = 1
+	silent! unmenu '&ANT.\ Target'
+	while target <= entries
+		let cmdString = ':call DoAntCmd(g:antOption." -buildfile",g:buildFile,"'.getline(target).'")<cr>'
+		let menuString = '&ANT.\ Target.\ ' . getline(target) . '	' . cmdString
+		exe 'amenu ' . menuString . '<cr>'
+		let target = target + 1
+	endwhile
+	set nomodified
+	bwipeout
+	return 1
+endfunction
 
 if exists("loaded_antmenu")
 	aunmenu ANT
+else
+  	let loaded_antmenu=1
 endif
 
+"globals
+let g:buildFile = './build.xml'
+let g:antOption = ''
+
 "keyboard shortcuts
-map	,b	:call DoAntCmd('-buildfile',g:buildFile)<cr>
+map	,b	:call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
 map	,s	:call SetBuildFile()<cr>
 map	,f	:call DoAntFind()<cr>
 
 "build ant menu
-amenu &ANT.\ &Build.\ &Default	:call DoAntCmd('-buildfile',g:buildFile)<cr>
-amenu &ANT.\ &Build.\ &Find	:call DoAntFind()<cr>
-amenu &ANT.\ &Build.\ &Debug 	:call DoAntCmd('-debug -buildfile',g:buildFile)<cr>
-amenu &ANT.\ &Build.\ &Verbose	:call DoAntCmd('-verbose -buildfile',g:buildFile)<cr>
-amenu &ANT.\ &Build.\ &Quiet 	:call DoAntCmd('-quiet -buildfile',g:buildFile)<cr>
-amenu &ANT.\ &Set\ build\ file	:call SetBuildFile()<cr>
-amenu &ANT.\ &ANT\ Help	 	:call DoAntCmd('--help')<cr>
-amenu &ANT.\ &ANT\ Version 	:call DoAntCmd('-version')<cr>
+amenu &ANT.\ &Build	:call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
+amenu &ANT.\ &Find	:call DoAntFind()<cr>
 
-if !exists("loaded_antmenu")
-  let loaded_antmenu=1
+"parse build file if one exists in current directory
+if filereadable(g:buildFile)
+	call BuildTargetMenu()
 endif
+
+amenu &ANT.\ &Set\ Option.\ &Quiet 	:let g:antOption = '-quiet'<cr>
+amenu &ANT.\ &Set\ Option.\ &Verbose	:let g:antOption = '-verbose'<cr>
+amenu &ANT.\ &Set\ Option.\ &Debug	:let g:antOption = '-debug'<cr>
+amenu &ANT.\ &Set\ Option.\ &Emacs	:let g:antOption = '-emacs'<cr>
+amenu &ANT.\ &Set\ Option.\ &None	:let g:antOption = ''<cr>
+amenu &ANT.\ &Set\ Option.\ &Display\ Current	:echo g:antOption<cr>
+amenu &ANT.\ &Set\ build\ file	:call SetBuildFile()<cr>
+amenu &ANT.\ &Help	 	:call DoAntCmd('-help')<cr>
+amenu &ANT.\ &Version 	:call DoAntCmd('-version')<cr>
 
 "Allows user to set build.xml.  If the file does not exist, gives a
 "statusline message and resets buildFile back to default.
@@ -38,28 +71,8 @@ function! SetBuildFile()
 		let g:buildFile = './build.xml'
 		return
 	endif
-	new
-	exec 'read '.g:buildFile
-  	exec 'g/^$/d'
-	"leave only target tags
-	exec 'g!/^\s<target/d'
-	exec '%s/\s*<target\s\(name="[^"]*"\).\+/\1/eg'
-	exec '%s/name//g'
-	exec '%s/"//g'
-	exec '%s/=//g'
-  	let entries=line("$")
-	let target = 1
-	silent! unmenu '&ANT.\ Target'
-	while target <= entries
-		let cmdString = ':call DoAntCmd("-buildfile",g:buildFile,"'.getline(target).'")<cr>'
-		let menuString = '&ANT.\ Target.\ ' . getline(target) . '	' . cmdString
-		exe 'amenu ' . menuString . '<cr>'
-		let target = target + 1
-	endwhile
-	redraw
-	echo 'There are '.entries.' targets'
-	set nomodified
-	bwipeout
+	call BuildTargetMenu()
+	return
 endfunction
 
 function! DoAntCmd(cmd,...)
@@ -85,8 +98,9 @@ endfunction
 
 function! DoAntFind(...)
     	let regbak=@z
-	let @z=system('ant -find '.g:buildFile)
+	let @z=system('ant '.g:antOption.' -find '.g:buildFile)
 	new
 	silent normal "zP
 	let @z=regbak
 endfunction
+
