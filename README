@@ -1,0 +1,15 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=155
+
+A simple script that provides a pull-down menu and keyboard shortcuts for calling ant, a java build 
+utility.  By default, ant.vim assumes that the build.xml file is in the current directory.  The user can 
+set the build file in another directory by selecting the "Set build file" option or by using ",s" in 
+command mode. 
+
+Global options can be set in your .vimrc file.      For example:
+
+let g:buildFile = 'foo.xml'
+let g:antOption = '-debug'
+let g:logFile = 'foo.log'
+
+If you are on a windows box and you cannot see compilation errors in your quickfix window,
+try setting the shellpipe to "2>" in your _vimrc.
