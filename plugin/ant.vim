@@ -2,8 +2,8 @@
 "Another Neat Tool (http://jakarta.apache.org/ant/index.html)
 "Author : Shad Gregory <shadg@mailcity.com>
 "http://home.austin.rr.com/shadgregory
-"$Date: 03/04/2003 $
-"$Revision: 0.5.1 $
+"$Date: 12/14/2003 $
+"$Revision: 0.5.2 $
 "
 "Configuration comments:
 "	You can set ant.vim options.  Let's say that you always use the
@@ -39,7 +39,9 @@
 "
 "	Thanks:
 "		Anton Straka, Ronny Wilms, Nathan Smith, Keith Corwin, Mark
-"		Healy, David Fishburn, Jou Wei Huang
+"		Healy, David Fishburn, Jou Wei Huang, Michael Scheper, Phil
+"		McCarthy
+"		Special thanks to David Fishburn for the quick fix code.
 
 function! GetProbFile()
 	let l:badFile = getline(".")
@@ -91,7 +93,7 @@ function! GetProbFile()
 		let l:current = getline(".")
 		let l:lineNumber = substitute(l:current,'.*:\(\d*\):.*','\1','')
 		if (bufexists(l:badFile))
-		  	l:bufferNumber = bufnr(l:badFile)
+		  	let l:bufferNumber = bufnr(l:badFile)
 			silent! exec 'split +' . l:lineNumber . ' ' .l:badFile
 		else
 			silent! exec '!gvim +' . l:lineNumber . ' ' .l:badFile
@@ -109,10 +111,11 @@ function! BuildTargetMenu()
 	silent! exec 'read '.g:buildFile
   	silent! exec 'g/^$/d'
 	"leave only target tags
-	silent! exec 'g/^\s*<!--.*-->$/d'
+	silent! exec 'g/^\s*<!--.*-->\s*$/d'
 	silent! exec 'g/<target.*[^>]$/exe "norm! v/>\<CR>J"'
     silent! exec 'g/<!--.*\_.*.*-->/exe "norm! v/-->\<CR>J"'
 	silent! exec '%s/\([^>]\)\s*\n\s*\([^<\s]\)/\1 \2/g'
+    silent! exec '%s/<\/target>//'
 	silent! exec 'g!/<target\s/d'
     silent! exec '%s/^\s*<target\s.*name="\([^"]*\)".\+/\1/eg'
  
@@ -153,15 +156,16 @@ endif
 "keyboard shortcuts
 map	,b	:call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
 map	,s	:call SetBuildFile()<cr>
-map	,f	:call DoAntCmd(g:antOption.' -find',g:buildFile)<cr>
+"map	,f	:call DoAntCmd(g:antOption.' -find',g:buildFile)<cr>
+map     ,f      :chdir %:p:h<cr> :call DoAntCmd(g:antOption.' -find',g:buildFile)<cr> :chdir -<cr>
 map	,l	:call SetLogFile()<cr>
 map	,g	:call GetProbFile()<cr>
 map	,t	:call SetBuildTarget()<cr>
 
 "build ant menu
 amenu &ANT.\ &Build	:call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
-"amenu &ANT.\ &Find	:call DoAntFind()<cr>
-amenu &ANT.\ &Find	:call DoAntCmd(g:antOption.' -find',g:buildFile)<cr>
+"amenu &ANT.\ &Find	:call DoAntCmd(g:antOption.' -find',g:buildFile)<cr>
+amenu &ANT.\ &Find      :chdir %:p:h<cr> :call DoAntCmd(g:antOption.' -find',g:buildFile)<cr> :chdir -<cr>
 
 "parse build file if one exists in current directory
 if filereadable(g:buildFile)
