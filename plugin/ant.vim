@@ -1,7 +1,9 @@
-"ant.vim : VIM menu for using ant
+"ant.vim : VIM menu for ant
 "Another Neat Tool (http://jakarta.apache.org/ant/index.html)
 "Author : Shad Gregory <shadg@mailcity.com>
-"$Revision: 0.3
+"$Date: 2001/12/13 $
+"$Revision: 0.31 $
+"
 "Keyboard Commands:
 "	,s -> This will prompt you for the location and name of the build
 "		file.  Not necessary if the build file is in the current
@@ -12,6 +14,10 @@
 "
 "	,f -> Executes 'ant -find' along with any option you have set via
 "		the menu.
+"
+"	,l -> Sets log file.  All ant output will be directed to the
+"		file you set with this option.
+
 function! BuildTargetMenu()
 	new
 	silent! exec 'read '.g:buildFile
@@ -22,7 +28,7 @@ function! BuildTargetMenu()
 	silent! exec '%s/name//g'
 	silent! exec '%s/"//g'
 	silent! exec '%s/=//g'
-	"Be sure to escape any periods
+	"escape any periods
 	silent! exec '%s/\./\\./g'
   	let entries=line("$")
 	let target = 1
@@ -45,13 +51,19 @@ else
 endif
 
 "globals
-let g:buildFile = './build.xml'
+if !exists("g:buildFile")
+	let g:buildFile = './build.xml'
+endif
+if !exists("g:logFile")
+	let g:logFile = ''
+endif
 let g:antOption = ''
 
 "keyboard shortcuts
 map	,b	:call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
 map	,s	:call SetBuildFile()<cr>
 map	,f	:call DoAntFind()<cr>
+map	,l	:call SetLogFile()<cr>
 
 "build ant menu
 amenu &ANT.\ &Build	:call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
@@ -68,9 +80,14 @@ amenu &ANT.\ &Set\ Option.\ &Debug	:let g:antOption = '-debug'<cr>
 amenu &ANT.\ &Set\ Option.\ &Emacs	:let g:antOption = '-emacs'<cr>
 amenu &ANT.\ &Set\ Option.\ &None	:let g:antOption = ''<cr>
 amenu &ANT.\ &Set\ Option.\ &Display\ Current	:echo g:antOption<cr>
-amenu &ANT.\ &Set\ build\ file	:call SetBuildFile()<cr>
+amenu &ANT.\ &Files.\ set\ build\ file	:call SetBuildFile()<cr>
+amenu &ANT.\ &Files.\ echo\ build\ file	:echo g:buildFile<cr>
+amenu &ANT.\ &Files.\ set\ log\ file	:call SetLogFile()<cr>
+amenu &ANT.\ &Files.\ echo\ log\ file	:echo g:logFile<cr>
+amenu &ANT.\ &Files.\ no\ log\ file	:let g:logFile = ''<cr>
+amenu &ANT.\ &Project\ Help 	:call DoAntCmd('-projecthelp')<cr>
 amenu &ANT.\ &Help	 	:call DoAntCmd('-help')<cr>
-amenu &ANT.\ &Version 	:call DoAntCmd('-version')<cr>
+amenu &ANT.\ &Version 		:call DoAntCmd('-version')<cr>
 
 "Allows user to set build.xml.  If the file does not exist, gives a
 "statusline message and resets buildFile back to default.
@@ -86,6 +103,11 @@ function! SetBuildFile()
 	return
 endfunction
 
+function! SetLogFile()
+	let g:logFile=escape(input('name of log file: '), '"<>|&')
+	return
+endfunction
+
 function! DoAntCmd(cmd,...)
     	let regbak=@z
 	if !exists("a:1")
@@ -97,14 +119,27 @@ function! DoAntCmd(cmd,...)
 			return
 		endif
 		if exists("a:2")
-			let @z=system('ant '.a:cmd.' '.a:1.' '.a:2)
+			if (g:logFile == '')
+				let @z=system('ant '.a:cmd.' '.a:1.' '.a:2)
+			else
+				let @z=system('ant -logfile '.g:logFile.' '.a:cmd.' '.a:1.' '.a:2)
+			endif
 		else
-			let @z=system('ant '.a:cmd.' '.a:1)
+			if (g:logFile == '')
+				let @z=system('ant '.a:cmd.' '.a:1)
+			else
+				let @z=system('ant -logfile '.g:logFile.' '.a:cmd.' '.a:1)
+			endif
 		endif
 	endif
-	new
-	silent normal "zP
-	let @z=regbak
+	if (g:logFile == '')
+		new
+		silent normal "zP
+		let @z=regbak
+	else
+		redraw
+		echo 'check '.g:logFile.' for ant output'
+	endif
 endfunction
 
 function! DoAntFind(...)
