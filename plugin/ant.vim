@@ -3,7 +3,7 @@
 "Author : Shad Gregory <shadg@mailcity.com>
 "
 "globals
-let g:buildFile = 'build.xml'
+let g:buildFile = './build.xml'
 
 if exists("loaded_antmenu")
 	aunmenu ANT
@@ -43,8 +43,19 @@ function! SetBuildFile()
   	exec 'g/^$/d'
 	"leave only target tags
 	exec 'g!/^\s<target/d'
+	exec '%s/\s*<target\s\(name="[^"]*"\).\+/\1/eg'
+	exec '%s/name//g'
+	exec '%s/"//g'
+	exec '%s/=//g'
   	let entries=line("$")
 	let target = 1
+	silent! unmenu '&ANT.\ Target'
+	while target <= entries
+		let cmdString = ':call DoAntCmd("-buildfile",g:buildFile,"'.getline(target).'")<cr>'
+		let menuString = '&ANT.\ Target.\ ' . getline(target) . '	' . cmdString
+		exe 'amenu ' . menuString . '<cr>'
+		let target = target + 1
+	endwhile
 	redraw
 	echo 'There are '.entries.' targets'
 	set nomodified
@@ -61,7 +72,11 @@ function! DoAntCmd(cmd,...)
 			echo 'build.xml is not readable!'
 			return
 		endif
-		let @z=system('ant '.a:cmd.' '.a:1)
+		if exists("a:2")
+			let @z=system('ant '.a:cmd.' '.a:1.' '.a:2)
+		else
+			let @z=system('ant '.a:cmd.' '.a:1)
+		endif
 	endif
 	new
 	silent normal "zP
