@@ -2,8 +2,8 @@
 "Another Neat Tool (http://jakarta.apache.org/ant/index.html)
 "Author : Shad Gregory <shadg@mailcity.com>
 "http://home.austin.rr.com/shadgregory
-"$Date: 01/18/2003 $
-"$Revision: 0.5 $
+"$Date: 03/04/2003 $
+"$Revision: 0.5.1 $
 "
 "Configuration comments:
 "	You can set ant.vim options.  Let's say that you always use the
@@ -39,7 +39,7 @@
 "
 "	Thanks:
 "		Anton Straka, Ronny Wilms, Nathan Smith, Keith Corwin, Mark
-"		Healy, David Fishburn
+"		Healy, David Fishburn, Jou Wei Huang
 
 function! GetProbFile()
 	let l:badFile = getline(".")
@@ -111,9 +111,12 @@ function! BuildTargetMenu()
 	"leave only target tags
 	silent! exec 'g/^\s*<!--.*-->$/d'
 	silent! exec 'g/<target.*[^>]$/exe "norm! v/>\<CR>J"'
-        silent! exec 'g/<!--.*\_.*.*-->/exe "norm! v/-->\<CR>J"'
-	silent! exec 'g!/<target/d'
-        silent! exec '%s/^\s*<target.*name="\([^"]*\)".\+/\1/eg'
+    silent! exec 'g/<!--.*\_.*.*-->/exe "norm! v/-->\<CR>J"'
+	silent! exec '%s/\([^>]\)\s*\n\s*\([^<\s]\)/\1 \2/g'
+	silent! exec 'g!/<target\s/d'
+    silent! exec '%s/^\s*<target\s.*name="\([^"]*\)".\+/\1/eg'
+ 
+
 	"escape any periods
 	silent! exec '%s/\./\\./g'
   	let entries=line("$")
@@ -203,7 +206,8 @@ function! DoAntCmd(cmd,...)
 	if !exists("a:1")
 		let ant_cmd='ant '.a:cmd
 	else
-		if !filereadable(a:1) && a:cmd != ' -find'
+		if !filereadable(a:1) && match(a:cmd ,"-find") == -1
+            echo a:cmd
 			redraw
 			echo 'build.xml is not readable!'
 			return
