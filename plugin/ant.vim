@@ -2,8 +2,8 @@
 "Another Neat Tool (http://jakarta.apache.org/ant/index.html)
 "Author : Shad Gregory <shadg@mailcity.com>
 "http://home.austin.rr.com/shadgregory
-"$Date: 11/9/2002 $
-"$Revision: 0.4.3 $
+"$Date: 01/18/2003 $
+"$Revision: 0.5 $
 "
 "Configuration comments:
 "	You can set ant.vim options.  Let's say that you always use the
@@ -39,22 +39,27 @@
 "
 "	Thanks:
 "		Anton Straka, Ronny Wilms, Nathan Smith, Keith Corwin, Mark
-"		Healy
+"		Healy, David Fishburn
 
 function! GetProbFile()
 	let l:badFile = getline(".")
   	"Is this jikes 1.17?
 	if getline(".") =~ 'Found \d.*syntax'
 	  	echo "jikes117!"
+		let l:badFile = substitute(l:badFile,'^||\(.*\)','\1','')
 		let l:badFile = substitute(l:badFile,'\[javac\]\(.*\)','\1','')
 		let l:badFile = substitute(l:badFile,'Found.*"\(.*\.java\)":','\1','')
 		let l:badFile = substitute(l:badFile,'^\s*\(.*\)','\1','')
+		let l:badFile = substitute(l:badFile,'^\s*\(.*\)\s*\s$','\1','')
 		let l:current = line('.') + 2
 		let l:lineNumber = getline(l:current)
 		let l:lineNumber = substitute(l:lineNumber,'^.*\s\(\d*\)\..*','\1','')
-		echo l:badFile
 		if (bufexists(l:badFile))
-		  	silent! exec 'split +' . l:lineNumber . ' ' .l:badFile
+		  	let l:bufferNumber = bufnr(l:badFile)
+			silent! exec l:bufferNumber . 'wincmd w'
+			exec "normal " . l:lineNumber . "gg"
+			"silent! exec l:bufferNumber . 'b'
+		  	"silent! exec 'split +' . l:lineNumber . ' ' .l:badFile
 		else
 			silent! exec '!gvim +' . l:lineNumber . ' ' .l:badFile
 		endif
@@ -62,6 +67,7 @@ function! GetProbFile()
 	"is this jikes 1.15?
 	elseif getline(".") =~ '\.java:\d*:\d'
 	  	echo "jikes115!"
+		let l:badFile = substitute(l:badFile,'^||\(.*\)','\1','')
 	        let l:badFile = substitute(l:badFile,'\(^.*\):\d*:.*','\1','')
         	let l:badFile = substitute(l:badFile,'\(^.*.java\):\d*:.*','\1','')
         	let l:badFile = substitute(l:badFile,'\[javac\]\(.*\)','\1','')
@@ -78,12 +84,14 @@ function! GetProbFile()
 	"Is this sun's jdk?
 	elseif getline(".") =~ '\.java:\d.*:'
 	  	echo "javac!"
+		let l:badFile = substitute(l:badFile,'^||\(.*\)','\1','')
 		let l:badFile = substitute(l:badFile,'\(^.*\):\d*:.*','\1','')
 		let l:badFile = substitute(l:badFile,'\[javac\]\(.*\)','\1','')
 		let l:badFile = substitute(l:badFile,'^\s*\(.*\)','\1','')
 		let l:current = getline(".")
 		let l:lineNumber = substitute(l:current,'.*:\(\d*\):.*','\1','')
 		if (bufexists(l:badFile))
+		  	l:bufferNumber = bufnr(l:badFile)
 			silent! exec 'split +' . l:lineNumber . ' ' .l:badFile
 		else
 			silent! exec '!gvim +' . l:lineNumber . ' ' .l:badFile
@@ -101,6 +109,7 @@ function! BuildTargetMenu()
 	silent! exec 'read '.g:buildFile
   	silent! exec 'g/^$/d'
 	"leave only target tags
+	silent! exec 'g/^\s*<!--.*-->$/d'
 	silent! exec 'g/<target.*[^>]$/exe "norm! v/>\<CR>J"'
         silent! exec 'g/<!--.*\_.*.*-->/exe "norm! v/-->\<CR>J"'
 	silent! exec 'g!/<target/d'
@@ -141,14 +150,15 @@ endif
 "keyboard shortcuts
 map	,b	:call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
 map	,s	:call SetBuildFile()<cr>
-map	,f	:call DoAntFind()<cr>
+map	,f	:call DoAntCmd(g:antOption.' -find',g:buildFile)<cr>
 map	,l	:call SetLogFile()<cr>
 map	,g	:call GetProbFile()<cr>
 map	,t	:call SetBuildTarget()<cr>
 
 "build ant menu
 amenu &ANT.\ &Build	:call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
-amenu &ANT.\ &Find	:call DoAntFind()<cr>
+"amenu &ANT.\ &Find	:call DoAntFind()<cr>
+amenu &ANT.\ &Find	:call DoAntCmd(g:antOption.' -find',g:buildFile)<cr>
 
 "parse build file if one exists in current directory
 if filereadable(g:buildFile)
@@ -190,45 +200,37 @@ function! SetLogFile()
 endfunction
 
 function! DoAntCmd(cmd,...)
-    	let regbak=@z
 	if !exists("a:1")
-		let @z=system('ant '.a:cmd)
+		let ant_cmd='ant '.a:cmd
 	else
-		if !filereadable(a:1)
+		if !filereadable(a:1) && a:cmd != ' -find'
 			redraw
 			echo 'build.xml is not readable!'
 			return
 		endif
 		if exists("a:2")
 			if (g:logFile == '')
-				let @z=system('ant '.a:cmd.' '.a:1.' '.a:2)
+				let ant_cmd='ant '.a:cmd.' '.a:1.' '.a:2
 			else
-				let @z=system('ant -logfile '.g:logFile.' '.a:cmd.' '.a:1.' '.a:2)
+				let ant_cmd='ant -logfile '.g:logFile.' '.a:cmd.' '.a:1.' '.a:2
 			endif
 		else
 			if (g:logFile == '')
-				let @z=system('ant '.a:cmd.' '.a:1)
+				let ant_cmd='ant '.a:cmd.' '.a:1
 			else
-				let @z=system('ant -logfile '.g:logFile.' '.a:cmd.' '.a:1)
+				let ant_cmd='ant -logfile '.g:logFile.' '.a:cmd.' '.a:1
 			endif
 		endif
 	endif
-	if (g:logFile == '')
-		new
-		silent normal "zP
-		let @z=regbak
-	else
-		redraw
-		echo 'check '.g:logFile.' for ant output'
-	endif
-endfunction
-
-function! DoAntFind(...)
-    	let regbak=@z
-	let @z=system('ant '.g:antOption.' -find '.g:buildFile)
-	new
-	silent normal "zP
-	let @z=regbak
+        " jikes format 
+        let &errorformat="\ %#[javac]\ %#%f:%l:%c:%*\\d:%*\\d:\ %t%[%^:]%#:%m"
+        " ant [javac] format 
+        let &errorformat=&errorformat . "," .
+                    \"\%A\ %#[javac]\ %f:%l:\ %m,%-Z\ %#[javac]\ %p^,%-C%.%#"
+        let &makeprg=ant_cmd
+        silent! execute 'make'
+        silent! execute 'cwindow'
+        silent! execute 'copen'
 endfunction
 
 function! SetBuildTarget()
