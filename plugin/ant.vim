@@ -1,8 +1,17 @@
 "ant.vim : VIM menu for using ant
 "Another Neat Tool (http://jakarta.apache.org/ant/index.html)
 "Author : Shad Gregory <shadg@mailcity.com>
-"$Revision: 0.2.1
+"$Revision: 0.3
+"Keyboard Commands:
+"	,s -> This will prompt you for the location and name of the build
+"		file.  Not necessary if the build file is in the current
+"		directory and named 'build.xml'
 "
+"	,b -> Executes 'ant -buildfile <build file>'  This will include any
+"		option you have set via the menu.
+"
+"	,f -> Executes 'ant -find' along with any option you have set via
+"		the menu.
 function! BuildTargetMenu()
 	new
 	silent! exec 'read '.g:buildFile
@@ -13,6 +22,8 @@ function! BuildTargetMenu()
 	silent! exec '%s/name//g'
 	silent! exec '%s/"//g'
 	silent! exec '%s/=//g'
+	"Be sure to escape any periods
+	silent! exec '%s/\./\\./g'
   	let entries=line("$")
 	let target = 1
 	silent! unmenu '&ANT.\ Target'
@@ -103,4 +114,3 @@ function! DoAntFind(...)
 	silent normal "zP
 	let @z=regbak
 endfunction
-
