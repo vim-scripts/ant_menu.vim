@@ -12,10 +12,11 @@ endif
 "keyboard shortcuts
 map	,b	:call DoAntCmd('-buildfile',g:buildFile)<cr>
 map	,s	:call SetBuildFile()<cr>
+map	,f	:call DoAntFind()<cr>
 
 "build ant menu
 amenu &ANT.\ &Build.\ &Default	:call DoAntCmd('-buildfile',g:buildFile)<cr>
-amenu &ANT.\ &Build.\ &Find	:call DoAntCmd('-find',g:buildFile)<cr>
+amenu &ANT.\ &Build.\ &Find	:call DoAntFind()<cr>
 amenu &ANT.\ &Build.\ &Debug 	:call DoAntCmd('-debug -buildfile',g:buildFile)<cr>
 amenu &ANT.\ &Build.\ &Verbose	:call DoAntCmd('-verbose -buildfile',g:buildFile)<cr>
 amenu &ANT.\ &Build.\ &Quiet 	:call DoAntCmd('-quiet -buildfile',g:buildFile)<cr>
@@ -62,6 +63,14 @@ function! DoAntCmd(cmd,...)
 		endif
 		let @z=system('ant '.a:cmd.' '.a:1)
 	endif
+	new
+	silent normal "zP
+	let @z=regbak
+endfunction
+
+function! DoAntFind(...)
+    	let regbak=@z
+	let @z=system('ant -find '.g:buildFile)
 	new
 	silent normal "zP
 	let @z=regbak
