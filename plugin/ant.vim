@@ -2,9 +2,7 @@
 "Author : Shad Gregory <shadg@mailcity.com>
 "
 "globals
-if filereadable('./build.xml')
-	let g:buildFile = './build.xml'
-endif
+let g:buildFile = './build.xml'
 
 if exists("loaded_antmenu")
 	aunmenu ANT
@@ -49,6 +47,11 @@ function! DoAntCmd(cmd,...)
 	if !exists("a:1")
 		let @z=system('ant '.a:cmd)
 	else
+		if !filereadable(a:1)
+			redraw
+			echo 'build.xml is not readable!'
+			return
+		endif
 		let @z=system('ant '.a:cmd.' '.a:1)
 	endif
 	new
