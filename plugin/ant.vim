@@ -1,8 +1,9 @@
 "ant.vim : VIM menu for ant
 "Another Neat Tool (http://jakarta.apache.org/ant/index.html)
 "Author : Shad Gregory <shadg@mailcity.com>
-"$Date: 2001/12/13 $
-"$Revision: 0.31 $
+"http://www.mindspring.com/~shadg
+"$Date: 2001/12/31 $
+"$Revision: 0.4 $
 "
 "Keyboard Commands:
 "	,s -> This will prompt you for the location and name of the build
@@ -17,6 +18,29 @@
 "
 "	,l -> Sets log file.  All ant output will be directed to the
 "		file you set with this option.
+"
+"	,g -> If you are in the error buffer, and you press ',g' at a the
+"		line that identifies which file the error came from,
+"		then vim will open that file in a new buffer.  The cursor
+"		should be at the line containing the first error.
+
+function! GetProbFile()
+	if getline(".") !~ '\[javac\] Found \d.* error'
+		redraw
+		echo 'Cannot parse file from this line!'
+		return
+	else
+		let l:badFile = getline(".")
+		let l:badFile = substitute(l:badFile,'.*\("[^"]*"\)','\1','')
+		let l:badFile = substitute(l:badFile,'"','','')
+		let l:current = line('.') + 2
+		let l:lineNumber = getline(l:current)
+		let l:lineNumber = substitute(l:lineNumber,'.*\(\s.*\)\..*','\1','')
+		silent! exec 'split '.l:badFile
+		silent! exec l:lineNumber
+		return
+	endif
+endfunction
 
 function! BuildTargetMenu()
 	new
@@ -64,6 +88,7 @@ map	,b	:call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
 map	,s	:call SetBuildFile()<cr>
 map	,f	:call DoAntFind()<cr>
 map	,l	:call SetLogFile()<cr>
+map	,g	:call GetProbFile()<cr>
 
 "build ant menu
 amenu &ANT.\ &Build	:call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
