@@ -1,9 +1,9 @@
 "ant.vim : VIM menu for ant
 "Another Neat Tool (http://jakarta.apache.org/ant/index.html)
 "Author : Shad Gregory <shadg@mailcity.com>
-"http://www.mindspring.com/~shadg
-"$Date: 2002/01/08 $
-"$Revision: 0.4.1 $
+"http://home.austin.rr.com/shadgregory
+"$Date: 8/8/2002 $
+"$Revision: 0.4.2 $
 "
 "Configuration comments:
 "	You can set ant.vim options.  Let's say that you always use the
@@ -32,6 +32,10 @@
 "		line that identifies which file the error came from,
 "		then vim will open that file in a new buffer.  The cursor
 "		should be at the line containing the first error.
+"
+"	,t -> Prompts you for the name of the build target and executes
+"		the specified target after enter is pressed.  (Thanks to
+"		Anton Straka for this bit of code.)
 
 function! GetProbFile()
 	if getline(".") =~ 'Found \d.* error'
@@ -41,7 +45,7 @@ function! GetProbFile()
 		let l:current = line('.') + 2
 		let l:lineNumber = getline(l:current)
 		let l:lineNumber = substitute(l:lineNumber,'.*\(\s.*\)\..*','\1','')
-		silent! exec 'split +' . l:lineNumber . ' ' .l:badFile
+		silent! exec '!gvim +' . l:lineNumber . ' ' .l:badFile
 		return
 	elseif getline(".") =~ '\.java:\d.*:'
 		let l:badFile = getline(".")
@@ -49,7 +53,7 @@ function! GetProbFile()
 		let l:badFile = substitute(l:badFile,'\[javac\]\(.*\)','\1','')
 		let l:current = getline(".")
 		let l:lineNumber = substitute(l:current,'.*:\(\d*\):.*','\1','')
-		silent! exec 'split +' . l:lineNumber . ' ' .l:badFile
+		silent! exec '!gvim +' . l:lineNumber . ' ' .l:badFile
 		return
 	else
 		redraw
@@ -63,7 +67,7 @@ function! BuildTargetMenu()
 	silent! exec 'read '.g:buildFile
   	silent! exec 'g/^$/d'
 	"leave only target tags
-	silent! exec 'g!/^\s<target/d'
+	silent! exec 'g!/<target/d'
 	silent! exec '%s/\s*<target\s\(name="[^"]*"\).\+/\1/eg'
 	silent! exec '%s/name//g'
 	silent! exec '%s/"//g'
@@ -107,6 +111,7 @@ map	,s	:call SetBuildFile()<cr>
 map	,f	:call DoAntFind()<cr>
 map	,l	:call SetLogFile()<cr>
 map	,g	:call GetProbFile()<cr>
+map	,t	:call SetBuildTarget()<cr>
 
 "build ant menu
 amenu &ANT.\ &Build	:call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
@@ -192,4 +197,9 @@ function! DoAntFind(...)
 	new
 	silent normal "zP
 	let @z=regbak
+endfunction
+
+function! SetBuildTarget()
+	let target=escape(input('name of build target: '), '"<>|&')
+	call DoAntCmd(g:antOption.' -buildfile',g:buildFile, target)
 endfunction
