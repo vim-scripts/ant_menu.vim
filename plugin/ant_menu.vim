@@ -1,18 +1,23 @@
-"ant.vim : VIM menu for ant
-"Another Neat Tool (http://ant.apache.org)
-"Author : Shad Gregory <captshadg@lycos.com>
-"http://home.austin.rr.com/shadgregory
-"$Date: 12/28/2003 $
-"$Revision: 0.5.3 $
+" ant_menu.vim : VIM menu for ant
+" Another Neat Tool (http://ant.apache.org)
+" Author : Shad Gregory <captshadg@lycos.com>
+" http://home.austin.rr.com/shadgregory
+" License : GNU Lesser General Public License
+" $Date: 4/19/2004 $
+" $Revision: 0.5.4 $
 "
 "Configuration comments:
-"  You can set ant.vim options.  Let's say that you always use the
+"  You can set ant_menu.vim options.  Let's say that you always use the
 "  '-debug' option and for some reason you've called your build 
 "  file 'JimBob.'  Then you should put the following lines in
 "  your .vimrc or _vimrc.
 "
-"  let g:buildFile = 'JimBob'
+"  let g:userBuildFile = 'JimBob'
 "  let g:antOption = '-debug'
+"
+"  ant_menu.vim dynamically loads your build.xml on start up and when you 
+"  switch buffers.  This behaviour will be disabled if you manually set the 
+"  build file via your start-up file or the ant menu.
 "
 "Keyboard Commands:
 "  ,s -> This will prompt you for the location and name of the build
@@ -36,11 +41,14 @@
 "  ,t -> Prompts you for the name of the build target and executes
 "    the specified target after enter is pressed.  (Thanks to
 "    Anton Straka for this bit of code.)
+"    
+"  ,z -> Prompts you for a build target that will be executed with 
+"    'ant -find'.
 "
 "  Thanks:
 "    Anton Straka, Ronny Wilms, Nathan Smith, Keith Corwin, Mark
 "    Healy, David Fishburn, Jou Wei Huang, Michael Scheper, Phil
-"    McCarthy
+"    McCarthy, Derek Pomery <feedback@m8y.org>, David <dak@dotech.com>
 "    Special thanks to David Fishburn for the quick fix code.
 
 "convenience function for GetProbFile()
@@ -143,7 +151,7 @@ function! GetProbFile()
   endif
 endfunction
 
-function! BuildTargetMenu()
+function! ParseBuildFile()
   new
   silent! exec 'read '.g:buildFile
   silent! exec 'g/^$/d'
@@ -155,13 +163,12 @@ function! BuildTargetMenu()
   silent! exec '%s/<\/target>//'
   silent! exec 'g!/<target\s/d'
   silent! exec '%s/^\s*<target\s.*name="\([^"]*\)".\+/\1/eg'
- 
 
   "escape any periods
   silent! exec '%s/\./\\./g'
   let entries=line("$")
   let target = 1
-  silent! unmenu '&ANT.\ Target'
+  silent! exec 'aunmenu ANT.\ Target'
   while target <= entries
     let cmdString = ':call DoAntCmd(g:antOption." -buildfile",g:buildFile,"'.getline(target).'")<cr>'
     let menuString = '&ANT.\ Target.\ ' . getline(target) . '  ' . cmdString
@@ -173,18 +180,31 @@ function! BuildTargetMenu()
   return 1
 endfunction
 
-"Allows user to set build.xml.  If the file does not exist, gives a
-"statusline message and resets buildFile back to default.
-function! SetBuildFile()
-  let g:buildFile=escape(input('build.xml location: '), '"<>|&')
-  if !filereadable(g:buildFile)
-    redraw
-    echo g:buildFile.' does not exist!'
-    let g:buildFile = './build.xml'
+function! BuildTargetMenu()
+    if !filereadable(g:userBuildFile)
+        let g:buildFile=expand('%:p:h').'/build.xml'
+    else
+        let g:buildFile=g:userBuildFile
+    endif
+    if !filereadable(g:buildFile)
+        redraw
+        let g:buildFile = './build.xml'
+        return
+    endif
+    call ParseBuildFile()
     return
-  endif
-  call BuildTargetMenu()
-  return
+endfunction
+
+function! SetBuildFile()
+    let g:userBuildFile=escape(input('build.xml location: '), '"<>|&')
+    if !filereadable(g:userBuildFile)
+        redraw
+        echo g:userBuildFile.' does not exist!'
+        return
+    endif
+    let g:buildFile = g:userBuildFile
+    call BuildTargetMenu()
+    return
 endfunction
 
 function! SetLogFile()
@@ -232,6 +252,13 @@ function! SetBuildTarget()
   call DoAntCmd(g:antOption.' -buildfile',g:buildFile, target)
 endfunction
 
+function! FindAndRunTarget()
+  let target=escape(input('name of build target: '), '"<>|&')
+  chdir %:p:h
+  call DoAntCmd(g:antOption.' -find', 'build.xml', target)
+  chdir -
+endfunction
+
 "It all starts here
 if exists("loaded_antmenu")
   aunmenu ANT
@@ -240,15 +267,18 @@ else
 endif
 
 "globals
-if !exists("g:buildFile")
-  let g:buildFile = './build.xml'
-endif
 if !exists("g:logFile")
   let g:logFile = ''
 endif
 if !exists("g:antOption")
   let g:antOption = ''
 endif
+if !exists("g:userBuildFile")
+    let g:userBuildFile = ''
+endif
+
+"This also sets the global varibale buildFile
+call BuildTargetMenu()
 
 "keyboard shortcuts
 map  ,b  :call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
@@ -257,15 +287,11 @@ map  ,f  :chdir %:p:h<cr> :call DoAntCmd(g:antOption.' -find',g:buildFile)<cr> :
 map  ,l  :call SetLogFile()<cr>
 map  ,g  :call GetProbFile()<cr>
 map  ,t  :call SetBuildTarget()<cr>
+map  ,z  :call FindAndRunTarget()<cr>
 
 "build ant menu
 amenu &ANT.\ &Build  :call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
-amenu &ANT.\ &Find      :chdir %:p:h<cr> :call DoAntCmd(g:antOption.' -find',g:buildFile)<cr> :chdir -<cr>
-
-"parse build file if one exists in current directory
-if filereadable(g:buildFile)
-  call BuildTargetMenu()
-endif
+amenu &ANT.\ &Find   :chdir %:p:h<cr> :call DoAntCmd(g:antOption.' -find',g:buildFile)<cr> :chdir -<cr>
 
 "setup the menu
 amenu &ANT.\ &Set\ Option.\ &Quiet   :let g:antOption = g:antOption . ' -quiet '<cr>
@@ -282,3 +308,5 @@ amenu &ANT.\ &Files.\ no\ log\ file  :let g:logFile = ''<cr>
 amenu &ANT.\ &Project\ Help   :call DoAntCmd('-projecthelp')<cr>
 amenu &ANT.\ &Help     :call DoAntCmd('-help')<cr>
 amenu &ANT.\ &Version     :call DoAntCmd('-version')<cr>
+
+au BufEnter * :call BuildTargetMenu()
