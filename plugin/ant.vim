@@ -2,8 +2,17 @@
 "Another Neat Tool (http://jakarta.apache.org/ant/index.html)
 "Author : Shad Gregory <shadg@mailcity.com>
 "http://www.mindspring.com/~shadg
-"$Date: 2001/12/31 $
-"$Revision: 0.4 $
+"$Date: 2002/01/08 $
+"$Revision: 0.4.1 $
+"
+"Configuration comments:
+"	You can set ant.vim options.  Let's say that you always use the
+"	'-debug' option and for some reason you've called your build 
+"	file 'JimBob.'  Then you should put the following lines in
+"	your .vimrc or _vimrc.
+"
+"	let g:buildFile = 'JimBob'
+"	let g:antOption = '-debug'
 "
 "Keyboard Commands:
 "	,s -> This will prompt you for the location and name of the build
@@ -25,19 +34,26 @@
 "		should be at the line containing the first error.
 
 function! GetProbFile()
-	if getline(".") !~ '\[javac\] Found \d.* error'
-		redraw
-		echo 'Cannot parse file from this line!'
-		return
-	else
+	if getline(".") =~ 'Found \d.* error'
 		let l:badFile = getline(".")
 		let l:badFile = substitute(l:badFile,'.*\("[^"]*"\)','\1','')
 		let l:badFile = substitute(l:badFile,'"','','')
 		let l:current = line('.') + 2
 		let l:lineNumber = getline(l:current)
 		let l:lineNumber = substitute(l:lineNumber,'.*\(\s.*\)\..*','\1','')
-		silent! exec 'split '.l:badFile
-		silent! exec l:lineNumber
+		silent! exec 'split +' . l:lineNumber . ' ' .l:badFile
+		return
+	elseif getline(".") =~ '\.java:\d.*:'
+		let l:badFile = getline(".")
+		let l:badFile = substitute(l:badFile,'\(^.*\):\d*:.*','\1','')
+		let l:badFile = substitute(l:badFile,'\[javac\]\(.*\)','\1','')
+		let l:current = getline(".")
+		let l:lineNumber = substitute(l:current,'.*:\(\d*\):.*','\1','')
+		silent! exec 'split +' . l:lineNumber . ' ' .l:badFile
+		return
+	else
+		redraw
+		echo 'Cannot parse file from this line!'
 		return
 	endif
 endfunction
@@ -81,7 +97,9 @@ endif
 if !exists("g:logFile")
 	let g:logFile = ''
 endif
-let g:antOption = ''
+if !exists("g:antOption")
+	let g:antOption = ''
+endif
 
 "keyboard shortcuts
 map	,b	:call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
@@ -93,16 +111,17 @@ map	,g	:call GetProbFile()<cr>
 "build ant menu
 amenu &ANT.\ &Build	:call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
 amenu &ANT.\ &Find	:call DoAntFind()<cr>
+amenu &ANT.\ &Make	:call CallMake()<cr>
 
 "parse build file if one exists in current directory
 if filereadable(g:buildFile)
 	call BuildTargetMenu()
 endif
 
-amenu &ANT.\ &Set\ Option.\ &Quiet 	:let g:antOption = '-quiet'<cr>
-amenu &ANT.\ &Set\ Option.\ &Verbose	:let g:antOption = '-verbose'<cr>
-amenu &ANT.\ &Set\ Option.\ &Debug	:let g:antOption = '-debug'<cr>
-amenu &ANT.\ &Set\ Option.\ &Emacs	:let g:antOption = '-emacs'<cr>
+amenu &ANT.\ &Set\ Option.\ &Quiet 	:let g:antOption = g:antOption . ' -quiet '<cr>
+amenu &ANT.\ &Set\ Option.\ &Verbose	:let g:antOption = g:antOption . ' -verbose '<cr>
+amenu &ANT.\ &Set\ Option.\ &Debug	:let g:antOption = g:antOption . ' -debug '<cr>
+amenu &ANT.\ &Set\ Option.\ &Emacs	:let g:antOption = g:antOption . ' -emacs '<cr>
 amenu &ANT.\ &Set\ Option.\ &None	:let g:antOption = ''<cr>
 amenu &ANT.\ &Set\ Option.\ &Display\ Current	:echo g:antOption<cr>
 amenu &ANT.\ &Files.\ set\ build\ file	:call SetBuildFile()<cr>
