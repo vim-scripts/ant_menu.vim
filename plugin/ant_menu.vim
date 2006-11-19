@@ -48,7 +48,8 @@
 "  Thanks:
 "    Anton Straka, Ronny Wilms, Nathan Smith, Keith Corwin, Mark
 "    Healy, David Fishburn, Jou Wei Huang, Michael Scheper, Phil
-"    McCarthy, Derek Pomery <feedback@m8y.org>, David <dak@dotech.com>
+"    McCarthy, Derek Pomery <feedback@m8y.org>, David <dak@dotech.com>,
+"    Amit Jain
 "    Special thanks to David Fishburn for the quick fix code.
 
 "convenience function for GetProbFile()
@@ -214,7 +215,7 @@ endfunction
 
 function! DoAntCmd(cmd,...)
   if !exists("a:1")
-    let ant_cmd='ant '.a:cmd
+    let ant_cmd='ant -emacs '.a:cmd
   else
     if !filereadable(a:1) && match(a:cmd ,"-find") == -1
             echo a:cmd
@@ -224,23 +225,22 @@ function! DoAntCmd(cmd,...)
     endif
     if exists("a:2")
       if (g:logFile == '')
-        let ant_cmd='ant '.a:cmd.' '.a:1.' '.a:2
+        let ant_cmd='ant -emacs '.a:cmd.' '.a:1.' '.a:2
       else
-        let ant_cmd='ant -logfile '.g:logFile.' '.a:cmd.' '.a:1.' '.a:2
+        let ant_cmd='ant -emacs -logfile '.g:logFile.' '.a:cmd.' '.a:1.' '.a:2
       endif
     else
       if (g:logFile == '')
-        let ant_cmd='ant '.a:cmd.' '.a:1
+        let ant_cmd='ant -emacs '.a:cmd.' '.a:1
       else
-        let ant_cmd='ant -logfile '.g:logFile.' '.a:cmd.' '.a:1
+        let ant_cmd='ant -emacs -logfile '.g:logFile.' '.a:cmd.' '.a:1
       endif
     endif
   endif
   " jikes format 
-  let &errorformat="\ %#[javac]\ %#%f:%l:%c:%*\\d:%*\\d:\ %t%[%^:]%#:%m"
+  "let &errorformat="\ %#[javac]\ %#%f:%l:%c:%*\\d:%*\\d:\ %t%[%^:]%#:%m"
   " ant [javac] format 
-  let &errorformat=&errorformat . "," .
-    \"\%A\ %#[javac]\ %f:%l:\ %m,%-Z\ %#[javac]\ %p^,%-C%.%#"
+  let &errorformat= "\%A%f:%l:\ %m,Symbol:\ %m,Class:\ %m,%-Z%p^"
   let &makeprg=ant_cmd
   silent! execute 'make'
   silent! execute 'cwindow'
