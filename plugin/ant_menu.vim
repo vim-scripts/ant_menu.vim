@@ -3,8 +3,8 @@
 " Author : Shad Gregory <captshadg@lycos.com>
 " http://home.austin.rr.com/shadgregory
 " License : GNU Lesser General Public License
-" $Date: 4/19/2004 $
-" $Revision: 0.5.4 $
+" $Date: 5/20/2009 $
+" $Revision: 0.5.6 $
 "
 "Configuration comments:
 "  You can set ant_menu.vim options.  Let's say that you always use the
@@ -48,9 +48,9 @@
 "  Thanks:
 "    Anton Straka, Ronny Wilms, Nathan Smith, Keith Corwin, Mark
 "    Healy, David Fishburn, Jou Wei Huang, Michael Scheper, Phil
-"    McCarthy, Derek Pomery <feedback@m8y.org>, David <dak@dotech.com>,
-"    Amit Jain
+"    McCarthy, Derek Pomery, David, Amit Jain
 "    Special thanks to David Fishburn for the quick fix code.
+
 
 "convenience function for GetProbFile()
 function! JumpToLineNoCol(windowNumber, lineNumber, badFile)
@@ -153,6 +153,12 @@ function! GetProbFile()
 endfunction
 
 function! ParseBuildFile()
+  if v:version > 601
+    let saveReg = getreg('"')
+    let saveRegType = getregtype('"')
+  else
+    let saveReg = @"
+  endif
   new
   silent! exec 'read '.g:buildFile
   silent! exec 'g/^$/d'
@@ -178,6 +184,11 @@ function! ParseBuildFile()
   endwhile
   set nomodified
   bwipeout
+  if v:version > 601
+    call setreg('"', saveReg, saveRegType) 
+  else
+    let @" = saveReg
+  endif
   return 1
 endfunction
 
