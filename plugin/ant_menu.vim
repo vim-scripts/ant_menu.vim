@@ -1,10 +1,10 @@
 " ant_menu.vim : VIM menu for ant
 " Another Neat Tool (http://ant.apache.org)
-" Author : Shad Gregory <captshadg@lycos.com>
-" http://home.austin.rr.com/shadgregory
+" Author : Shad Gregory <captshadg@gmail.com>
+" http://shadgregory.net
 " License : GNU Lesser General Public License
-" $Date: 5/20/2009 $
-" $Revision: 0.5.6 $
+" $Date: 6/03/2009 $
+" $Revision: 0.5.7$
 "
 "Configuration comments:
 "  You can set ant_menu.vim options.  Let's say that you always use the
@@ -270,6 +270,65 @@ function! FindAndRunTarget()
   chdir -
 endfunction
 
+function! SetAntOption(option)
+  silent! exec 'aunmenu ANT.\ Set\ Option'
+  silent! exec 'amenu 100 ANT.\ Set\ Option'
+
+  if (a:option == 'quiet')
+    if (g:antOption !~ 'quiet')
+      let g:antOption = g:antOption . ' -quiet'
+    else
+      let g:antOption = substitute(g:antOption, ' -quiet', '', 'g')
+    endif
+  endif
+  if (a:option == 'verbose')
+    if (g:antOption !~ 'verbose')
+      let g:antOption = g:antOption . ' -verbose'
+    else
+      let g:antOption = substitute(g:antOption, ' -verbose', '', 'g')
+    endif
+  endif
+  if (a:option == 'debug')
+    if (g:antOption !~ 'debug')
+      let g:antOption = g:antOption . ' -debug'
+    else
+      let g:antOption = substitute(g:antOption, ' -debug', '', 'g')
+    endif
+  endif
+  if (a:option == 'emacs')
+    if (g:antOption !~ 'emacs')
+      let g:antOption = g:antOption . ' -emacs'
+    else
+      let g:antOption = substitute(g:antOption, ' -emacs', '', 'g')
+    endif
+  endif
+  if (a:option == 'clear')
+    let g:antOption = ''
+  endif
+  if (g:antOption =~ 'quiet')
+    amenu 80.3 &ANT.\ &Set\ Option.\ &Quiet\ * :call SetAntOption('quiet')<cr>
+  else
+    amenu 80.3 &ANT.\ &Set\ Option.\ &Quiet :call SetAntOption('quiet')<cr>
+  endif
+  if (g:antOption =~ 'verbose')
+    amenu 80.3 &ANT.\ &Set\ Option.\ &Verbose\ * :call SetAntOption('verbose')<cr>
+  else
+    amenu 80.3 &ANT.\ &Set\ Option.\ &Verbose :call SetAntOption('verbose')<cr>
+  endif
+  if (g:antOption =~ 'debug')
+    amenu 80.3 &ANT.\ &Set\ Option.\ &Debug\ * :call SetAntOption('debug')<cr>
+  else
+    amenu 80.3 &ANT.\ &Set\ Option.\ &Debug :call SetAntOption('debug')<cr>
+  endif
+  if (g:antOption =~ 'emacs')
+    amenu 80.3 &ANT.\ &Set\ Option.\ &Emacs\ * :call SetAntOption('emacs')<cr>
+  else
+    amenu 80.3 &ANT.\ &Set\ Option.\ &Emacs :call SetAntOption('emacs')<cr>
+  endif
+  amenu 80.3 &ANT.\ &Set\ Option.\ &None  :call SetAntOption('clear')<cr>
+
+endfunction
+
 "It all starts here
 if exists("loaded_antmenu")
   aunmenu ANT
@@ -301,16 +360,15 @@ map  ,t  :call SetBuildTarget()<cr>
 map  ,z  :call FindAndRunTarget()<cr>
 
 "build ant menu
-amenu &ANT.\ &Build  :call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
-amenu &ANT.\ &Find   :chdir %:p:h<cr> :call DoAntCmd(g:antOption.' -find',g:buildFile)<cr> :chdir -<cr>
+amenu 80.1 &ANT.\ &Build  :call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
+amenu 80.2 &ANT.\ &Find   :chdir %:p:h<cr> :call DoAntCmd(g:antOption.' -find',g:buildFile)<cr> :chdir -<cr>
 
 "setup the menu
-amenu &ANT.\ &Set\ Option.\ &Quiet   :let g:antOption = g:antOption . ' -quiet '<cr>
-amenu &ANT.\ &Set\ Option.\ &Verbose  :let g:antOption = g:antOption . ' -verbose '<cr>
-amenu &ANT.\ &Set\ Option.\ &Debug  :let g:antOption = g:antOption . ' -debug '<cr>
-amenu &ANT.\ &Set\ Option.\ &Emacs  :let g:antOption = g:antOption . ' -emacs '<cr>
-amenu &ANT.\ &Set\ Option.\ &None  :let g:antOption = ''<cr>
-amenu &ANT.\ &Set\ Option.\ &Display\ Current  :echo g:antOption<cr>
+amenu 80.3 &ANT.\ &Set\ Option.\ &Quiet   :call SetAntOption('quiet')<cr>
+amenu 80.3 &ANT.\ &Set\ Option.\ &Verbose :call SetAntOption('verbose')<cr>
+amenu 80.3 &ANT.\ &Set\ Option.\ &Debug  :call SetAntOption('debug')<cr>
+amenu 80.3 &ANT.\ &Set\ Option.\ &Emacs  :call SetAntOption('emacs')<cr>
+amenu 80.3 &ANT.\ &Set\ Option.\ &None  :let g:antOption = ''<cr>
 amenu &ANT.\ &Files.\ set\ build\ file  :call SetBuildFile()<cr>
 amenu &ANT.\ &Files.\ echo\ build\ file  :echo g:buildFile<cr>
 amenu &ANT.\ &Files.\ set\ log\ file  :call SetLogFile()<cr>
