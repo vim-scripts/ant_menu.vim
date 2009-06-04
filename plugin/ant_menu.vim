@@ -3,8 +3,8 @@
 " Author : Shad Gregory <captshadg@gmail.com>
 " http://shadgregory.net
 " License : GNU Lesser General Public License
-" $Date: 6/03/2009 $
-" $Revision: 0.5.7$
+" $Date: 06/03/2009 $
+" $Revision: 0.5.7.1$
 "
 "Configuration comments:
 "  You can set ant_menu.vim options.  Let's say that you always use the
@@ -175,10 +175,10 @@ function! ParseBuildFile()
   silent! exec '%s/\./\\./g'
   let entries=line("$")
   let target = 1
-  silent! exec 'aunmenu ANT.\ Target'
+  silent! exec 'aunmenu &Plugin.&ANT.\ Target'
   while target <= entries
     let cmdString = ':call DoAntCmd(g:antOption." -buildfile",g:buildFile,"'.getline(target).'")<cr>'
-    let menuString = '&ANT.\ Target.\ ' . getline(target) . '  ' . cmdString
+    let menuString = '&Plugin.&ANT.\ Target.\ ' . getline(target) . '  ' . cmdString
     exe 'amenu ' . menuString . '<cr>'
     let target = target + 1
   endwhile
@@ -271,8 +271,8 @@ function! FindAndRunTarget()
 endfunction
 
 function! SetAntOption(option)
-  silent! exec 'aunmenu ANT.\ Set\ Option'
-  silent! exec 'amenu 100 ANT.\ Set\ Option'
+  silent! exec 'aunmenu &Plugin.&ANT.\ Set\ Option'
+  silent! exec 'amenu 100 &Plugin.&ANT.\ Set\ Option'
 
   if (a:option == 'quiet')
     if (g:antOption !~ 'quiet')
@@ -306,26 +306,26 @@ function! SetAntOption(option)
     let g:antOption = ''
   endif
   if (g:antOption =~ 'quiet')
-    amenu 80.3 &ANT.\ &Set\ Option.\ &Quiet\ * :call SetAntOption('quiet')<cr>
+    amenu  &Plugin.&ANT.\ &Set\ Option.\ &Quiet\ * :call SetAntOption('quiet')<cr>
   else
-    amenu 80.3 &ANT.\ &Set\ Option.\ &Quiet :call SetAntOption('quiet')<cr>
+    amenu  &Plugin.&ANT.\ &Set\ Option.\ &Quiet :call SetAntOption('quiet')<cr>
   endif
   if (g:antOption =~ 'verbose')
-    amenu 80.3 &ANT.\ &Set\ Option.\ &Verbose\ * :call SetAntOption('verbose')<cr>
+    amenu  &Plugin.&ANT.\ &Set\ Option.\ &Verbose\ * :call SetAntOption('verbose')<cr>
   else
-    amenu 80.3 &ANT.\ &Set\ Option.\ &Verbose :call SetAntOption('verbose')<cr>
+    amenu  &Plugin.&ANT.\ &Set\ Option.\ &Verbose :call SetAntOption('verbose')<cr>
   endif
   if (g:antOption =~ 'debug')
-    amenu 80.3 &ANT.\ &Set\ Option.\ &Debug\ * :call SetAntOption('debug')<cr>
+    amenu  &Plugin.&ANT.\ &Set\ Option.\ &Debug\ * :call SetAntOption('debug')<cr>
   else
-    amenu 80.3 &ANT.\ &Set\ Option.\ &Debug :call SetAntOption('debug')<cr>
+    amenu  &Plugin.&ANT.\ &Set\ Option.\ &Debug :call SetAntOption('debug')<cr>
   endif
   if (g:antOption =~ 'emacs')
-    amenu 80.3 &ANT.\ &Set\ Option.\ &Emacs\ * :call SetAntOption('emacs')<cr>
+    amenu  &Plugin.&ANT.\ &Set\ Option.\ &Emacs\ * :call SetAntOption('emacs')<cr>
   else
-    amenu 80.3 &ANT.\ &Set\ Option.\ &Emacs :call SetAntOption('emacs')<cr>
+    amenu  &Plugin.&ANT.\ &Set\ Option.\ &Emacs :call SetAntOption('emacs')<cr>
   endif
-  amenu 80.3 &ANT.\ &Set\ Option.\ &None  :call SetAntOption('clear')<cr>
+  amenu  &Plugin.&ANT.\ &Set\ Option.\ &None  :call SetAntOption('clear')<cr>
 
 endfunction
 
@@ -360,22 +360,17 @@ map  ,t  :call SetBuildTarget()<cr>
 map  ,z  :call FindAndRunTarget()<cr>
 
 "build ant menu
-amenu 80.1 &ANT.\ &Build  :call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
-amenu 80.2 &ANT.\ &Find   :chdir %:p:h<cr> :call DoAntCmd(g:antOption.' -find',g:buildFile)<cr> :chdir -<cr>
+amenu  &Plugin.&ANT.\ &Build  :call DoAntCmd(g:antOption.' -buildfile',g:buildFile)<cr>
+amenu  &Plugin.&ANT.\ &Find   :chdir %:p:h<cr> :call DoAntCmd(g:antOption.' -find',g:buildFile)<cr> :chdir -<cr>
 
-"setup the menu
-amenu 80.3 &ANT.\ &Set\ Option.\ &Quiet   :call SetAntOption('quiet')<cr>
-amenu 80.3 &ANT.\ &Set\ Option.\ &Verbose :call SetAntOption('verbose')<cr>
-amenu 80.3 &ANT.\ &Set\ Option.\ &Debug  :call SetAntOption('debug')<cr>
-amenu 80.3 &ANT.\ &Set\ Option.\ &Emacs  :call SetAntOption('emacs')<cr>
-amenu 80.3 &ANT.\ &Set\ Option.\ &None  :let g:antOption = ''<cr>
-amenu &ANT.\ &Files.\ set\ build\ file  :call SetBuildFile()<cr>
-amenu &ANT.\ &Files.\ echo\ build\ file  :echo g:buildFile<cr>
-amenu &ANT.\ &Files.\ set\ log\ file  :call SetLogFile()<cr>
-amenu &ANT.\ &Files.\ echo\ log\ file  :echo g:logFile<cr>
-amenu &ANT.\ &Files.\ no\ log\ file  :let g:logFile = ''<cr>
-amenu &ANT.\ &Project\ Help   :call DoAntCmd('-projecthelp')<cr>
-amenu &ANT.\ &Help     :call DoAntCmd('-help')<cr>
-amenu &ANT.\ &Version     :call DoAntCmd('-version')<cr>
+amenu &Plugin.&ANT.\ &Files.\ set\ build\ file  :call SetBuildFile()<cr>
+amenu &Plugin.&ANT.\ &Files.\ echo\ build\ file  :echo g:buildFile<cr>
+amenu &Plugin.&ANT.\ &Files.\ set\ log\ file  :call SetLogFile()<cr>
+amenu &Plugin.&ANT.\ &Files.\ echo\ log\ file  :echo g:logFile<cr>
+amenu &Plugin.&ANT.\ &Files.\ no\ log\ file  :let g:logFile = ''<cr>
+amenu &Plugin.&ANT.\ &Project\ Help   :call DoAntCmd('-projecthelp')<cr>
+amenu &Plugin.&ANT.\ &Help     :call DoAntCmd('-help')<cr>
+amenu &Plugin.&ANT.\ &Version     :call DoAntCmd('-version')<cr>
 
 au BufEnter * :call BuildTargetMenu()
+au BufEnter * :call SetAntOption('')
